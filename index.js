@@ -76,7 +76,7 @@ const lex = lexer({
 
 	'NUMBER': /^(?:\d+(?:\.\d*)?|\.\d+)/,
 	'$SKIP': [ /^\s+/ ]
-}, '1^2^3^4') //'(-1 + 2) * 3 ^ 2 ^ 1') //  - (-2 - 1) * 3 + 2^2^2
+}, '(1 + 2) * 3') //'(-1 + 2) * 3 ^ 2 ^ 1') //  - (-2 - 1) * 3 + 2^2^2
 
 function bp(token) {
 	return {
@@ -136,4 +136,20 @@ function expr(rbp = 0) {
 }
 
 const ast = expr()
+
+const result = (function visit(node) {
+	if (typeof node == 'number')
+		return node
+
+	return {
+		exp: n => Math.pow(visit(n.left), visit(n.right)),
+		add: n => visit(n.left) + visit(n.right),
+		sub: n => visit(n.left) - visit(n.right),
+		mult: n => visit(n.left) * visit(n.right),
+		div: n => visit(n.left) / visit(n.right),
+		neg: n => -visit(n.value)
+	}[node.type](node)
+})(ast)
+
 console.log(require('util').inspect(ast, null, null))
+console.log(result)
