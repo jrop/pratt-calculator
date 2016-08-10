@@ -1,68 +1,6 @@
 'use strict'
 
-function lexer(tokenTypes, s) {
-	let pos = 0
-	let curr = null
-
-	function skip() {
-		let skipRegexes = tokenTypes['$SKIP'] || [ ]
-		if (!Array.isArray(skipRegexes))
-			skipRegexes = [ skipRegexes ]
-
-		let skips = [ ]
-		do {
-			skips = skipRegexes.map(r => peekRegex(r))
-				.filter(m => m !== null)
-			pos += skips.length > 0 ? skips[0].length : 0
-		} while (skips.length > 0)
-	}
-
-	function next(type) {
-		const m = peek(type)
-		pos += m && m.match ? m.match.length : 0
-		curr = m
-		return m
-	}
-
-	function expect(types) {
-		if (!Array.isArray(types))
-			types = [ types ]
-
-		const t = next(types)
-		if (!t || !types.includes(t.type))
-			throw new Error('Expected: ' + types)
-		return t
-	}
-
-	function current() {
-		return curr
-	}
-
-	function peek(types) {
-		skip()
-		if (pos >= s.length)
-			return { type: '$EOF', match: '' }
-
-		types = types || Object.keys(tokenTypes).filter(key => key != '$SKIP')
-		if (!Array.isArray(types))
-			types = [ types ]
-
-		let match = types.map(type => {
-				const m = peekRegex(tokenTypes[type])
-				return m ? { type: type, match: m[0] } : null
-			})
-			.filter(m => m !== null)
-		return match.length > 0 ? match[0] : null
-	}
-
-	function peekRegex(r) {
-		r.lastMatch = 0
-		const m = r.exec(s.substring(pos))
-		return m ? m[0] : null
-	}
-
-	return { next, peek, expect, current }
-}
+const lexer = require('./lexer')
 
 const lex = lexer({
 	// operators
@@ -76,18 +14,18 @@ const lex = lexer({
 
 	'NUMBER': /^(?:\d+(?:\.\d*)?|\.\d+)/,
 	'$SKIP': [ /^\s+/ ]
-}, '(1 + 2) * 3') //'(-1 + 2) * 3 ^ 2 ^ 1') //  - (-2 - 1) * 3 + 2^2^2
+}, '(1 + 2^3^1) * 3') //'(-1 + 2) * 3 ^ 2 ^ 1') //  - (-2 - 1) * 3 + 2^2^2
 
 function bp(token) {
 	return {
 		'$EOF': -1,
-		'LPAREN': 5,
-		'RPAREN': 5,
-		'PLUS': 10,
-		'MINUS': 10,
-		'MULTIPLY': 20,
-		'DIVIDE': 20,
-		'EXPONENT': 30,
+		'LPAREN': 10,
+		'RPAREN': 10,
+		'PLUS': 20,
+		'MINUS': 30,
+		'MULTIPLY': 40,
+		'DIVIDE': 50,
+		'EXPONENT': 60,
 	}[token.type]
 }
 
@@ -96,7 +34,7 @@ function nud(token) {
 	case 'NUMBER':
 		return parseFloat(token.match)
 	case 'MINUS':
-		const value = expr(50)
+		const value = expr(70)
 		console.log('\t', value)
 		return { type: 'neg', value }
 	case 'LPAREN':
