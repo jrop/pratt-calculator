@@ -10,11 +10,11 @@ function parser(s) {
 		.extra({
 			nud() {
 				const pos = this.position()
-				throw new Error(`Unexpected token: ${this.type} (${pos.start.line}:${pos.start.column})`)
+				throw new Error(`Unexpected token: ${this.match} at ${pos.start.line}:${pos.start.column}`)
 			},
 			led() {
 				const pos = this.position()
-				throw new Error(`Unexpected token: ${this.type} (${pos.start.line}:${pos.start.column})`)
+				throw new Error(`Unexpected token: ${this.match} at ${pos.start.line}:${pos.start.column}`)
 			},
 		})
 
@@ -84,5 +84,23 @@ function parser(s) {
 	// Kick off the process:
 	return expr()
 } // parser
+
+parser.visit = function visit(node) {
+	if (typeof node == 'number')
+		return node
+
+	return {
+		'^': n => Math.pow(visit(n.left), visit(n.right)),
+		'+': n => visit(n.left) + visit(n.right),
+		'-': n => visit(n.left) - visit(n.right),
+		'*': n => visit(n.left) * visit(n.right),
+		'/': n => visit(n.left) / visit(n.right),
+		neg: n => -visit(n.value)
+	}[node.type](node)
+}
+
+parser.calc = function calc(s) {
+	return parser.visit(parser(s))
+}
 
 module.exports = parser
