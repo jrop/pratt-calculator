@@ -1,65 +1,88 @@
 'use strict'
 
-const lexer = require('./lexer')
+const perplex = require('perplex')
 
 function parser(s) {
-	function infix(regex, bp) {
-		return {
-			regex,
-			bp,
-			led: function (left) {
-				return { type: this.type, left, right: expr(bp) }
+	//
+	// BEGIN lexer:
+	//
+	const lexer = perplex()
+		.extra({
+			nud() {
+				const pos = this.position()
+				throw new Error(`Unexpected token: ${this.type} (${pos.start.line}:${pos.start.column})`)
 			},
-		}
-	}
+			led() {
+				const pos = this.position()
+				throw new Error(`Unexpected token: ${this.type} (${pos.start.line}:${pos.start.column})`)
+			},
+		})
 
-	const tokens = {
-		'NUMBER': {
-			regex: /(?:\d+(?:\.\d*)?|\.\d+)/,
-			nud: function () { return parseFloat(this.match) },
-		},
+		.token('NUMBER', /(?:\d+(?:\.\d*)?|\.\d+)/, {
+			bp: Number.MAX_VALUE,
+			nud() { return parseFloat(this.match) },
+		})
 
-		'(': {
-			bp: 10,
-			regex: /\(/,
+		// + and -
+		.token('+', /\+/, {
+			bp: 20,
+			nud() { return expr(60) },
+			led(left, bp) { return { type: '+', left, right: expr(20) } }
+		})
+		.token('-', /-/, {
+			bp: 20,
+			nud() { return { type: 'neg', value: expr(60) } },
+			led(left, bp) { return { type: '-', left, right: expr(20) } }
+		})
+
+		// * and /
+		.token('*', /\*/, {
+			bp: 30,
+			led(left, bp) { return { type: '*', left, right: expr(30) } }
+		})
+		.token('/', /\//, {
+			bp: 30,
+			led(left, bp) { return { type: '/', left, right: expr(30) } }
+		})
+
+		// ^
+		.token('^', /\^/, {
+			bp: 40,
+			led(left, bp) { return { type: '^', left, right: expr(bp - 1) } }
+		})
+
+		// ()
+		.token('(', /\(/, {
+			bp: 50,
 			nud: function () {
 				const inner = expr(10)
 				this.lexer.expect(')')
 				return inner
 			},
-		},
-		')': { bp: 10, regex: /\)/ },
+		})
+		.token(')', /\)/, { bp: 10 })
 
-		'+': infix(/\+/, 20),
-		'-': {
-			regex: /-/,
-			bp: 20,
-			nud: () => ({ type: 'neg', value: expr(60) }),
-			led: left => ({ type: 'sub', left, right: expr(20) }),
-		},
-		'*': infix(/\*/, 40),
-		'/': infix(/\//, 40),
-		'^': {
-			regex: /\^/,
-			bp: 50,
-			led: (left, bp) => ({ type: '^', left, right: expr(bp - 1) })
-		},
+		// whitespace
+		.token('$SKIP', /\s+/)
+		.source(s)
+	//
+	// END lexer
+	//
 
-		'$SKIP': { regex: /\s+/ },
-	}
-
-	const lex = lexer(tokens)(s)
-
+	//
+	// The infamous Pratt Expression routine:
+	//
 	function expr(rbp = 0) {
-		let left = lex.next().nud()
-		while (rbp < lex.peek().bp) {
-			const operator = lex.next()
+		let left = lexer.next().nud()
+		while (rbp < lexer.peek().bp) {
+			const operator = lexer.next()
 			left = operator.led(left, operator.bp)
 		}
 		return left
 	}
 
+	// Kick off the process:
 	return expr()
-}
+} // parser
 
 module.exports = parser

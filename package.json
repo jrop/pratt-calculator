@@ -1,0 +1,23 @@
+{
+  "name": "pratt-calculator",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jrop/pratt-calculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jrop/pratt-calculator/issues"
+  },
+  "homepage": "https://github.com/jrop/pratt-calculator#readme",
+  "dependencies": {
+    "perplex": "^0.1.1"
+  }
+}
