@@ -23,6 +23,18 @@ function parser(s) {
 			nud() { return parseFloat(this.match) },
 		})
 
+		.token('ID', /[A-Za-z]+/, {
+			bp: Number.MAX_VALUE,
+			nud() {
+				const mbr = Math[this.match]
+				if (typeof mbr == 'undefined') {
+					const pos = this.position().start
+					throw new Error(`Undefined variable: '${this.match}' (at ${pos.line}:${pos.column})`)
+				}
+				return { type: 'id', ref: mbr, id: this.match }
+			},
+		})
+
 		// + and -
 		.token('+', /\+/, {
 			bp: 20,
@@ -59,6 +71,20 @@ function parser(s) {
 				this.lexer.expect(')')
 				return inner
 			},
+			led: function (left, bp) {
+				if (left.type != 'id') {
+					const pos = this.position().start
+					throw new Error(`Cannot invoke expression as if it was a function (at ${pos.line}:${pos.column})`)
+				}
+				if (typeof left.ref != 'function') {
+					const pos = this.position().start
+					throw new Error(`Cannot invoke non-function (at ${pos.line}:${pos.column})`)
+				}
+
+				const args = expr(10)
+				this.lexer.expect(')')
+				return { type: '()', target: left, args }
+			},
 		})
 		.token(')', /\)/, { bp: 10 })
 
@@ -90,11 +116,13 @@ parser.visit = function visit(node) {
 		return node
 
 	return {
+		'id': n => n.ref,
 		'^': n => Math.pow(visit(n.left), visit(n.right)),
 		'+': n => visit(n.left) + visit(n.right),
 		'-': n => visit(n.left) - visit(n.right),
 		'*': n => visit(n.left) * visit(n.right),
 		'/': n => visit(n.left) / visit(n.right),
+		'()': node => node.target.ref(visit(node.args)),
 		neg: n => -visit(n.value)
 	}[node.type](node)
 }

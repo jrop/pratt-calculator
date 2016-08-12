@@ -12,7 +12,7 @@ const rl = readline.createInterface({
 
 rl.on('line', function (line) {
 	try {
-		console.log('= ' + calc(line))
+		console.log(calc(line))
 	} catch (e) {
 		console.error(e.message)
 	}
