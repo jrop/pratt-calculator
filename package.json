@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "calc": "./index.js"
+  },
   "scripts": {
     "prepublish": "npm test",
     "test": "node test.js"

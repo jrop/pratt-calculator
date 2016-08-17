@@ -39,7 +39,7 @@ The `expr` method can be summarized in english as "The loop (while) builds out t
 ```js
 function expr(rbp) {
 	// (1) handle prefix operator
-	// (2) continue until I encounter an operator of greater precedence than myself
+	// (2) continue until I encounter an operator of lesser precedence than myself
 	// (3) "eat" the operator
 	// (4) give the operator the left side of the tree, and let it build the right side; this new tree is our new "left"
 }
