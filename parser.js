@@ -1,114 +1,65 @@
-'use strict'
-
 const perplex = require('perplex')
+const pratt = require('pratt')
 
 function parser(s) {
-	//
-	// BEGIN lexer:
-	//
-	const lexer = perplex()
-		.extra({
-			nud() {
-				const pos = this.position()
-				throw new Error(`Unexpected token: ${this.match} at ${pos.start.line}:${pos.start.column}`)
-			},
-			led() {
-				const pos = this.position()
-				throw new Error(`Unexpected token: ${this.match} at ${pos.start.line}:${pos.start.column}`)
-			},
-		})
-
-		.token('NUMBER', /(?:\d+(?:\.\d*)?|\.\d+)/, {
-			bp: Number.MAX_VALUE,
-			nud() { return parseFloat(this.match) },
-		})
-
-		.token('ID', /[A-Za-z]+/, {
-			bp: Number.MAX_VALUE,
-			nud() {
-				const mbr = Math[this.match]
-				if (typeof mbr == 'undefined') {
-					const pos = this.position().start
-					throw new Error(`Undefined variable: '${this.match}' (at ${pos.line}:${pos.column})`)
-				}
-				return { type: 'id', ref: mbr, id: this.match }
-			},
-		})
-
-		// + and -
-		.token('+', /\+/, {
-			bp: 20,
-			nud() { return expr(60) },
-			led(left, bp) { return { type: '+', left, right: expr(20) } }
-		})
-		.token('-', /-/, {
-			bp: 20,
-			nud() { return { type: 'neg', value: expr(60) } },
-			led(left, bp) { return { type: '-', left, right: expr(20) } }
-		})
-
-		// * and /
-		.token('*', /\*/, {
-			bp: 30,
-			led(left, bp) { return { type: '*', left, right: expr(30) } }
-		})
-		.token('/', /\//, {
-			bp: 30,
-			led(left, bp) { return { type: '/', left, right: expr(30) } }
-		})
-
-		// ^
-		.token('^', /\^/, {
-			bp: 40,
-			led(left, bp) { return { type: '^', left, right: expr(bp - 1) } }
-		})
-
-		// ()
-		.token('(', /\(/, {
-			bp: 50,
-			nud: function () {
-				const inner = expr(10)
-				this.lexer.expect(')')
-				return inner
-			},
-			led: function (left, bp) {
-				if (left.type != 'id') {
-					const pos = this.position().start
-					throw new Error(`Cannot invoke expression as if it was a function (at ${pos.line}:${pos.column})`)
-				}
-				if (typeof left.ref != 'function') {
-					const pos = this.position().start
-					throw new Error(`Cannot invoke non-function (at ${pos.line}:${pos.column})`)
-				}
-
-				const args = expr(10)
-				this.lexer.expect(')')
-				return { type: '()', target: left, args }
-			},
-		})
-		.token(')', /\)/, { bp: 10 })
-
-		// whitespace
+	const lexer = perplex(s)
+		.token('NUMBER', /(?:\d+(?:\.\d*)?|\.\d+)/)
+		.token('ID', /[A-Za-z]+/)
+		.token('+', /\+/)
+		.token('-', /-/)
+		.token('*', /\*/)
+		.token('/', /\//)
+		.token('^', /\^/)
+		.token('(', /\(/)
+		.token(')', /\)/)
 		.token('$SKIP', /\s+/)
-		.source(s)
-	//
-	// END lexer
-	//
 
-	//
-	// The infamous Pratt Expression routine:
-	//
-	function expr(rbp = 0) {
-		let left = lexer.next().nud()
-		while (rbp < lexer.peek().bp) {
-			const operator = lexer.next()
-			left = operator.led(left, operator.bp)
-		}
-		return left
-	}
+	const parser = new pratt.Parser(lexer)
+		.builder()
+		.bp('$EOF', -1)
+		.nud('NUMBER', Number.MAX_VALUE, t => parseFloat(t.match))
+		.nud('ID', Number.MAX_VALUE, t => {
+			const mbr = Math[t.match]
+			if (typeof mbr == 'undefined') {
+				const pos = t.strpos().start
+				throw new Error(`Undefined variable: '${t.match}' (at ${pos.line}:${pos.column})`)
+			}
+			return {type: 'id', ref: mbr, id: t.match}
+		})
 
-	// Kick off the process:
-	return expr()
+		.nud('+', 20, (t, bp) => parser.parse(bp))
+		.led('+', 20, (left, t, bp) => ({type: '+', left, right: parser.parse(bp)}))
+		.nud('-', 20, (t, bp) => ({type: 'neg', value: parser.parse(bp)}))
+		.led('-', 20, (left, t, bp) => ({type: '-', left, right: parser.parse(bp)}))
+
+		.led('*', 30, (left, t, bp) => ({type: '*', left, right: parser.parse(bp)}))
+		.led('/', 30, (left, t, bp) => ({type: '/', left, right: parser.parse(bp)}))
+
+		.led('^', 40, (left, t, bp) => ({type: '^', left, right: parser.parse(bp - 1)}))
+
+		.bp(')', 0)
+		.nud('(', 50, () => {
+			const inner = parser.parse()
+			lexer.expect(')')
+			return inner
+		})
+		.led('(', 50, (left, t) => {
+			if (left.type != 'id') {
+				const pos = t.strpos().start
+				throw new Error(`Cannot invoke expression as if it was a function (at ${pos.line}:${pos.column})`)
+			}
+			if (typeof left.ref != 'function') {
+				const pos = t.strpos().start
+				throw new Error(`Cannot invoke non-function (at ${pos.line}:${pos.column})`)
+			}
+
+			const args = parser.parse()
+			lexer.expect(')')
+			return {type: '()', target: left, args}
+		})
+		.build()
+
+	return parser.parse()
 } // parser
 
 parser.visit = function visit(node) {
@@ -123,7 +74,7 @@ parser.visit = function visit(node) {
 		'*': n => visit(n.left) * visit(n.right),
 		'/': n => visit(n.left) / visit(n.right),
 		'()': node => node.target.ref(visit(node.args)),
-		neg: n => -visit(n.value)
+		'neg': n => -visit(n.value),
 	}[node.type](node)
 }
 

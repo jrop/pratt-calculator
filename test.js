@@ -1,11 +1,5 @@
-'use strict'
-
 const assert = require('assert')
-const { calc } = require('./parser')
-
-// const inspect = require('util').inspect
-// const ast = parser('3.^4^.5')
-// console.log(inspect(ast, null, null))
+const {calc} = require('./parser')
 
 assert.equal(calc('1 + 2 * 3'), 7)
 assert.equal(calc('(1 + 2) * 3'), 9)
@@ -21,4 +15,5 @@ assert.equal(calc('floor(ceil(0.5) / 2)'), 0)
 assert.equal(calc('PI'), Math.PI)
 assert.equal(calc('abs(cos(PI)) + 9'), 10)
 
+// eslint-disable-next-line no-console
 console.log('All tests completed successfully')

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-'use strict'
-
-const { calc } = require('./parser')
+/* eslint-disable no-console */
+const {calc} = require('./parser')
 
 const args = process.argv.slice(2)
 if (args.length == 0) { // no args
