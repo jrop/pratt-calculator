@@ -12,11 +12,11 @@ function parser(s) {
 		.token('^', /\^/)
 		.token('(', /\(/)
 		.token(')', /\)/)
-		.token('$SKIP', /\s+/)
+		.token('WHITESPACE', /\s+/, true)
 
 	const parser = new pratt.Parser(lexer)
 		.builder()
-		.bp('$EOF', -1)
+		.bp('EOF', -1)
 		.nud('NUMBER', Number.MAX_VALUE, t => parseFloat(t.match))
 		.nud('ID', Number.MAX_VALUE, t => {
 			const mbr = Math[t.match]
