@@ -1,6 +1,8 @@
 Pratt Parser
 ============
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/jrop/pratt-calculator.svg)](https://greenkeeper.io/)
+
 This project demonstrates the fundamentals of a Pratt Parser.  It is based on [this paper](https://tdop.github.io/) by Vaughan Pratt, and also learns from [this article](http://javascript.crockford.com/tdop/tdop.html) and [this article](http://journal.stuffwithstuff.com/2011/03/19/pratt-parsers-expression-parsing-made-easy/).
 
 Additionally, this README file attempts to simplify the concepts so that, when I come back to try to implement this again (at some undetermined point in the future), I will be able to remember how this works.
