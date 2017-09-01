@@ -22,12 +22,12 @@
   },
   "homepage": "https://github.com/jrop/pratt-calculator#readme",
   "dependencies": {
-    "perplex": "^0.8.0",
-    "pratt": "^0.3.0"
+    "perplex": "^0.10.2",
+    "pratt": "^0.5.0"
   },
   "devDependencies": {
-    "ava": "^0.19.1",
-    "eslint": "^3.19.0",
+    "ava": "^0.22.0",
+    "eslint": "^4.5.0",
     "eslint-config-jrop": "^0.0.1"
   }
 }
