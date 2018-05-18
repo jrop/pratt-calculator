@@ -7,6 +7,9 @@
     "calc": "./index.js"
   },
   "scripts": {
+    "lint": "prettier -l '*.js' && eslint '*.js'",
+    "lint:fix": "prettier --write '*.js' && eslint --fix '*.js'",
+    "precommit": "npm run lint",
     "prepublish": "npm test",
     "test": "node test.js"
   },
@@ -21,13 +24,11 @@
     "url": "https://github.com/jrop/pratt-calculator/issues"
   },
   "homepage": "https://github.com/jrop/pratt-calculator#readme",
-  "dependencies": {
-    "perplex": "^0.8.0",
-    "pratt": "^0.3.0"
-  },
   "devDependencies": {
-    "ava": "^0.19.1",
     "eslint": "^3.19.0",
-    "eslint-config-jrop": "^0.0.1"
+    "eslint-config-jrop": "^0.0.1",
+    "husky": "^0.14.3",
+    "prettier": "^1.12.1",
+    "tape": "^4.9.0"
   }
 }
