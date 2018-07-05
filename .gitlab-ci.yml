@@ -1,0 +1,13 @@
+image: node:8
+
+lint:
+  tags: [docker]
+  script:
+  - yarn
+  - yarn lint
+
+test:
+  tags: [docker]
+  script:
+  - yarn
+  - yarn test

@@ -10,7 +10,7 @@
     "lint": "prettier -l '*.js' && eslint '*.js'",
     "lint:fix": "prettier --write '*.js' && eslint --fix '*.js'",
     "precommit": "npm run lint",
-    "prepublish": "npm test",
+    "prepack": "npm test",
     "test": "node test.js"
   },
   "repository": {
